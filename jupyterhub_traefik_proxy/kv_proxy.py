@@ -249,7 +249,7 @@ class TKvProxy(TraefikProxy):
 
 
         routespec = self._routespec_to_traefik_path(routespec)
-        route_keys = traefik_utils.generate_route_keys(self, routespec, desig=self.traefik_default_host.split('.',1)[0])
+        route_keys = traefik_utils.generate_route_keys(self, routespec, desig=self.traefik_default_desig)
 
         # Store the data dict passed in by JupyterHub
         data = json.dumps(data)
@@ -298,7 +298,7 @@ class TKvProxy(TraefikProxy):
         """
         routespec = self._routespec_to_traefik_path(routespec)
         jupyterhub_routespec = self.kv_jupyterhub_prefix + routespec
-        route_keys = traefik_utils.generate_route_keys(self, routespec, desig=self.traefik_default_host.split('.',1)[0])
+        route_keys = traefik_utils.generate_route_keys(self, routespec, desig=self.traefik_default_desig)
 
         status, response = await self._kv_atomic_delete_route_parts(
             jupyterhub_routespec, route_keys

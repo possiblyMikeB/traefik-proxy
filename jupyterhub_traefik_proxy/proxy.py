@@ -34,6 +34,11 @@ from . import traefik_utils
 class TraefikProxy(Proxy):
     """JupyterHub Proxy implementation using traefik"""
 
+    traefik_default_desig = Unicode(
+        "",
+        config=True,
+        help="""default name/designation appended to the beginning of service/router names"""
+    )
     traefik_default_host = Unicode(
         "localhost",
         config=True,
@@ -150,7 +155,7 @@ class TraefikProxy(Proxy):
 
     async def _wait_for_route(self, routespec, provider):
         self.log.info("Waiting for %s to register with traefik", routespec)
-        desig = self.traefik_default_host.split('.', 1)[0]
+        desig = self.traefik_default_desig
         async def _check_traefik_dynamic_conf_ready():
             """Check if traefik loaded its dynamic configuration yet"""
             if not await self._check_for_traefik_endpoint(
