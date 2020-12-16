@@ -37,7 +37,7 @@ class TraefikEtcdProxy(TKvProxy):
 
     executor = Any()
 
-    kv_name = "etcdv3"
+    kv_name = "etcd"
 
     etcd_client_ca_cert = Unicode(
         config=True,
@@ -135,11 +135,12 @@ class TraefikEtcdProxy(TKvProxy):
             self.kv_client.transactions.put(jupyterhub_routespec, target),
             self.kv_client.transactions.put(target, data),
             self.kv_client.transactions.put(route_keys.backend_url_path, target),
-            self.kv_client.transactions.put(route_keys.backend_weight_path, "1"),
+            #self.kv_client.transactions.put(route_keys.backend_weight_path, "1"),
             self.kv_client.transactions.put(
                 route_keys.frontend_backend_path, route_keys.backend_alias
             ),
             self.kv_client.transactions.put(route_keys.frontend_rule_path, rule),
+            self.kv_client.transactions.put(route_keys.frontend_rule_path.replace('rule', 'entryPoints/0'), 'websecure')
         ]
         status, response = await maybe_future(self._etcd_transaction(success))
         return status, response
@@ -156,9 +157,11 @@ class TraefikEtcdProxy(TKvProxy):
             self.kv_client.transactions.delete(jupyterhub_routespec),
             self.kv_client.transactions.delete(target),
             self.kv_client.transactions.delete(route_keys.backend_url_path),
-            self.kv_client.transactions.delete(route_keys.backend_weight_path),
+            #self.kv_client.transactions.delete(route_keys.backend_weight_path),
             self.kv_client.transactions.delete(route_keys.frontend_backend_path),
             self.kv_client.transactions.delete(route_keys.frontend_rule_path),
+            self.kv_client.transactions.delete(route_keys.frontend_rule_path.replace('rule', 'entryPoints/0'))
+ 
         ]
         status, response = await maybe_future(self._etcd_transaction(success))
         return status, response
@@ -179,7 +182,7 @@ class TraefikEtcdProxy(TKvProxy):
         key = kv_entry[1].key.decode()
         value = kv_entry[0]
 
-        # Strip the "/jupyterhub" prefix from the routespec
+        # Strip the kv_jupyterhub_prefix from the routespec
         routespec = key.replace(self.kv_jupyterhub_prefix, "")
         target = value.decode()
         data = await self._kv_get_data(target)

@@ -34,6 +34,12 @@ from . import traefik_utils
 class TraefikProxy(Proxy):
     """JupyterHub Proxy implementation using traefik"""
 
+    traefik_default_host = Unicode(
+        "localhost",
+        config=True,
+        help="""default host to attach when no other host-based-routing is specificed"""
+    )
+
     traefik_process = Any()
 
     toml_static_config_file = Unicode(
@@ -108,21 +114,32 @@ class TraefikProxy(Proxy):
         ht.set_password(self.traefik_api_username, self.traefik_api_password)
         self.traefik_api_hashed_password = str(ht.to_string()).split(":")[1][:-3]
 
-    async def _check_for_traefik_endpoint(self, routespec, kind, provider):
+    async def _check_for_traefik_endpoint(self, routespec, kind, provider, desig=""):
         """Check for an expected frontend or backend
 
         This is used to wait for traefik to load configuration
         from a provider
         """
-        expected = traefik_utils.generate_alias(routespec, kind)
-        path = "/api/providers/{}/{}s".format(provider, kind)
+
+        expected = traefik_utils.generate_alias(routespec, desig)
+        expected = f'{expected}@{provider}'
+
+        if kind == 'frontend':
+            kind = 'http/routers'
+        elif kind == 'backend':
+            kind = 'http/services'
+
+        path = "/api/{}".format(kind)
         try:
             resp = await self._traefik_api_request(path)
             data = json.loads(resp.body)
+            data = [ x.get('name') for x in data ]
+            data = [ n for n in data if n.endswith(provider) ]
         except Exception:
             self.log.exception("Error checking traefik api for %s %s", kind, routespec)
             return False
 
+        self.log.debug("DATA: %s", repr(data))
         if expected not in data:
             self.log.debug("traefik %s not yet in %ss", expected, kind)
             self.log.debug("Current traefik %ss: %s", kind, data)
@@ -133,15 +150,15 @@ class TraefikProxy(Proxy):
 
     async def _wait_for_route(self, routespec, provider):
         self.log.info("Waiting for %s to register with traefik", routespec)
-
+        desig = self.traefik_default_host.split('.', 1)[0]
         async def _check_traefik_dynamic_conf_ready():
             """Check if traefik loaded its dynamic configuration yet"""
             if not await self._check_for_traefik_endpoint(
-                routespec, "backend", provider
+                routespec, "backend", provider, desig=desig
             ):
                 return False
             if not await self._check_for_traefik_endpoint(
-                routespec, "frontend", provider
+                routespec, "frontend", provider, desig=desig
             ):
                 return False
 

@@ -247,13 +247,17 @@ class TKvProxy(TraefikProxy):
         """
         self.log.info("Adding route for %s to %s.", routespec, target)
 
+
         routespec = self._routespec_to_traefik_path(routespec)
-        route_keys = traefik_utils.generate_route_keys(self, routespec)
+        route_keys = traefik_utils.generate_route_keys(self, routespec, desig=self.traefik_default_host.split('.',1)[0])
 
         # Store the data dict passed in by JupyterHub
         data = json.dumps(data)
         # Generate the routing rule
-        rule = traefik_utils.generate_rule(routespec)
+        if routespec.startswith('/'):
+            rule = traefik_utils.generate_rule(f'{self.traefik_default_host}{routespec}')
+        else:
+            rule = traefik_utils.generate_rule(routespec)
 
         # To be able to delete the route when only routespec is provided
         jupyterhub_routespec = self.kv_jupyterhub_prefix + routespec
@@ -294,7 +298,7 @@ class TKvProxy(TraefikProxy):
         """
         routespec = self._routespec_to_traefik_path(routespec)
         jupyterhub_routespec = self.kv_jupyterhub_prefix + routespec
-        route_keys = traefik_utils.generate_route_keys(self, routespec)
+        route_keys = traefik_utils.generate_route_keys(self, routespec, desig=self.traefik_default_host.split('.',1)[0])
 
         status, response = await self._kv_atomic_delete_route_parts(
             jupyterhub_routespec, route_keys
@@ -328,7 +332,7 @@ class TKvProxy(TraefikProxy):
             all_routes[routespec] = {
                 "routespec": routespec,
                 "target": target,
-                "data": None if data is None else json.loads(data),
+                "data": dict() if data is None else json.loads(data),
             }
 
         return all_routes

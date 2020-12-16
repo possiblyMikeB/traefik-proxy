@@ -28,18 +28,22 @@ def generate_rule(routespec):
     routespec = unquote(routespec)
     if routespec.startswith("/"):
         # Path-based route, e.g. /proxy/path/
-        rule = "PathPrefix:" + routespec
+        # rule = "PathPrefix:" + routespec
+        rule = f'PathPrefix(`{routespec}`)'
     else:
         # Host-based routing, e.g. host.tld/proxy/path/
         host, path_prefix = routespec.split("/", 1)
         path_prefix = "/" + path_prefix
-        rule = "Host:" + host + ";PathPrefix:" + path_prefix
+        # rule = "Host:" + host + ";PathPrefix:" + path_prefix
+        rule = f'Host(`{host}`) && PathPrefix(`{path_prefix}`)'
     return rule
 
 
 def generate_alias(routespec, server_type=""):
     safe = string.ascii_letters + string.digits + "-"
-    return server_type + "_" + escapism.escape(routespec, safe=safe)
+    if routespec == '/':
+        routespec = '/public' # has no effect on routing; only naming
+    return server_type + escapism.escape(routespec.replace('/','-'), safe=safe)
 
 
 def generate_backend_entry(
@@ -48,22 +52,23 @@ def generate_backend_entry(
     backend_entry = ""
     if separator is "/":
         backend_entry = proxy.kv_traefik_prefix
-    backend_entry += separator.join(["backends", backend_alias, "servers", "server1"])
+    backend_entry += separator.join(["http", "services", backend_alias, "loadbalancer", "servers", "0"])
     if url is True:
         backend_entry += separator + "url"
     elif weight is True:
+        # XXX: wieght is still used elsewhere so we can't just nuke it...
         backend_entry += separator + "weight"
 
     return backend_entry
 
 
 def generate_frontend_backend_entry(proxy, frontend_alias):
-    return proxy.kv_traefik_prefix + "frontends/" + frontend_alias + "/backend"
+    return proxy.kv_traefik_prefix + "http/routers/" + frontend_alias + "/service"
 
 
 def generate_frontend_rule_entry(proxy, frontend_alias, separator="/"):
     frontend_rule_entry = separator.join(
-        ["frontends", frontend_alias, "routes", "test"]
+        ["http", "routers", frontend_alias]
     )
     if separator == "/":
         frontend_rule_entry = (
@@ -73,9 +78,9 @@ def generate_frontend_rule_entry(proxy, frontend_alias, separator="/"):
     return frontend_rule_entry
 
 
-def generate_route_keys(proxy, routespec, separator="/"):
-    backend_alias = generate_alias(routespec, "backend")
-    frontend_alias = generate_alias(routespec, "frontend")
+def generate_route_keys(proxy, routespec, desig="", separator="/"):
+    backend_alias = generate_alias(routespec, desig)
+    frontend_alias = backend_alias # doesn't matter in traefik v2 
 
     RouteKeys = namedtuple(
         "RouteKeys",
@@ -85,7 +90,8 @@ def generate_route_keys(proxy, routespec, separator="/"):
             "backend_weight_path",
             "frontend_alias",
             "frontend_backend_path",
-            "frontend_rule_path",
+            "frontend_rule_path"
+            
         ],
     )
 
