@@ -360,11 +360,13 @@ class TKvProxy(TraefikProxy):
         routespec = self.validate_routespec(routespec)
         traefik_routespec = self._routespec_to_traefik_path(routespec)
         jupyterhub_routespec = self.kv_jupyterhub_prefix + traefik_routespec
-
-        target = await self._kv_get_target(jupyterhub_routespec)
-        if target is None:
+        
+        # XXX: removed extra key/val pair with `target` as key
+        val = await self._kv_get_target(jupyterhub_routespec)
+        if val is None:
             return None
-        data = await self._kv_get_data(target)
+        # data = await self._kv_get_data(target)
+        target, _, data = val.partition('\n')
 
         return {
             "routespec": routespec,

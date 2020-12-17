@@ -132,8 +132,8 @@ class TraefikEtcdProxy(TKvProxy):
         self, jupyterhub_routespec, target, data, route_keys, rule
     ):
         success = [
-            self.kv_client.transactions.put(jupyterhub_routespec, target),
-            self.kv_client.transactions.put(target, data),
+            self.kv_client.transactions.put(jupyterhub_routespec, f'{target}\n{data}'),
+            #self.kv_client.transactions.put(target, data),
             self.kv_client.transactions.put(route_keys.backend_url_path, target),
             #self.kv_client.transactions.put(route_keys.backend_weight_path, "1"),
             self.kv_client.transactions.put(
@@ -155,7 +155,7 @@ class TraefikEtcdProxy(TKvProxy):
 
         success = [
             self.kv_client.transactions.delete(jupyterhub_routespec),
-            self.kv_client.transactions.delete(target),
+            #self.kv_client.transactions.delete(target),
             self.kv_client.transactions.delete(route_keys.backend_url_path),
             #self.kv_client.transactions.delete(route_keys.backend_weight_path),
             self.kv_client.transactions.delete(route_keys.frontend_backend_path),
@@ -168,6 +168,7 @@ class TraefikEtcdProxy(TKvProxy):
 
     async def _kv_get_target(self, jupyterhub_routespec):
         value = await maybe_future(self._etcd_get(jupyterhub_routespec))
+        value = value.partition('\n')[0]
         if value == None:
             return None
         return value.decode()
