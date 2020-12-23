@@ -52,12 +52,12 @@ def generate_backend_entry(
     backend_entry = ""
     if separator is "/":
         backend_entry = proxy.kv_traefik_prefix
-    backend_entry += separator.join(["http", "services", backend_alias, "loadbalancer", "servers", "0"])
+    backend_entry += separator.join(["http", "services", backend_alias, "loadbalancer"])
     if url is True:
-        backend_entry += separator + "url"
+        backend_entry += separator + separator.join(["servers", "0", "url"])
     elif weight is True:
-        # XXX: wieght is still used elsewhere so we can't just nuke it...
-        backend_entry += separator + "weight"
+        # XXX: UPDATE: Will be using `weight` for serverstransport assignment
+        backend_entry += separator + "serverstransport"
 
     return backend_entry
 

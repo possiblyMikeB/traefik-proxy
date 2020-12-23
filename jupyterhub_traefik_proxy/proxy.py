@@ -43,7 +43,7 @@ class TraefikProxy(Proxy):
         "localhost",
         config=True,
         help="""default host to attach when no other host-based-routing is specificed"""
-    )
+    )traefik_default_desig
 
     traefik_process = Any()
 
@@ -144,7 +144,7 @@ class TraefikProxy(Proxy):
             self.log.exception("Error checking traefik api for %s %s", kind, routespec)
             return False
 
-        self.log.debug("DATA: %s", repr(data))
+        # self.log.debug("DATA: %s", repr(data))
         if expected not in data:
             self.log.debug("traefik %s not yet in %ss", expected, kind)
             self.log.debug("Current traefik %ss: %s", kind, data)

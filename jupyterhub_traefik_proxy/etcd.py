@@ -135,7 +135,7 @@ class TraefikEtcdProxy(TKvProxy):
             self.kv_client.transactions.put(jupyterhub_routespec, f'{target}\n{data}'),
             #self.kv_client.transactions.put(target, data),
             self.kv_client.transactions.put(route_keys.backend_url_path, target),
-            #self.kv_client.transactions.put(route_keys.backend_weight_path, "1"),
+            self.kv_client.transactions.put(route_keys.backend_weight_path, self.traefik_default_desig),
             self.kv_client.transactions.put(
                 route_keys.frontend_backend_path, route_keys.backend_alias
             ),
@@ -157,7 +157,7 @@ class TraefikEtcdProxy(TKvProxy):
             self.kv_client.transactions.delete(jupyterhub_routespec),
             #self.kv_client.transactions.delete(target),
             self.kv_client.transactions.delete(route_keys.backend_url_path),
-            #self.kv_client.transactions.delete(route_keys.backend_weight_path),
+            self.kv_client.transactions.delete(route_keys.backend_weight_path),
             self.kv_client.transactions.delete(route_keys.frontend_backend_path),
             self.kv_client.transactions.delete(route_keys.frontend_rule_path),
             self.kv_client.transactions.delete(route_keys.frontend_rule_path.replace('rule', 'entryPoints/0'))
