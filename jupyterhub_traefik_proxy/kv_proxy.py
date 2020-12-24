@@ -269,7 +269,8 @@ class TKvProxy(TraefikProxy):
         if self.should_start:
             try:
                 # Check if traefik was launched
-                pid = self.traefik_process.pid
+                #pid = self.traefik_process.pid
+                pass
             except AttributeError:
                 self.log.error(
                     "You cannot add routes if the proxy isn't running! Please start the proxy: proxy.start()"

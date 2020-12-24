@@ -43,7 +43,7 @@ class TraefikProxy(Proxy):
         "localhost",
         config=True,
         help="""default host to attach when no other host-based-routing is specificed"""
-    )traefik_default_desig
+    )
 
     traefik_process = Any()
 
