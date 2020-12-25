@@ -168,16 +168,15 @@ class TraefikEtcdProxy(TKvProxy):
 
     async def _kv_get_target(self, jupyterhub_routespec):
         value = await maybe_future(self._etcd_get(jupyterhub_routespec))
-        value = value.partition('\n')[0]
         if value == None:
             return None
-        return value.decode()
+        return value.decode().partition('\n')[0]
 
     async def _kv_get_data(self, target):
         value = await maybe_future(self._etcd_get(target))
         if value is None:
             return None
-        return value
+        return value.partition('\n')[-1]
 
     async def _kv_get_route_parts(self, kv_entry):
         key = kv_entry[1].key.decode()
@@ -185,9 +184,8 @@ class TraefikEtcdProxy(TKvProxy):
 
         # Strip the kv_jupyterhub_prefix from the routespec
         routespec = key.replace(self.kv_jupyterhub_prefix, "")
-        target = value.decode()
-        data = await self._kv_get_data(target)
-
+        target = value.decode().partition('\n')[0]
+        data = value.decode().partition('\n')[-1]
         return routespec, target, data
 
     async def _kv_get_jupyterhub_prefixed_entries(self):
