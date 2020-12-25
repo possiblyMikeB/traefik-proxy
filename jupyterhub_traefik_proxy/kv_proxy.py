@@ -330,11 +330,14 @@ class TKvProxy(TraefikProxy):
         for kv_entry in routes:
             traefik_routespec, target, data = await self._kv_get_route_parts(kv_entry)
             routespec = self._routespec_from_traefik_path(traefik_routespec)
-            all_routes[routespec] = {
-                "routespec": routespec,
-                "target": target,
-                "data": dict() if data is None else json.loads(data),
-            }
+            try:
+                all_routes[routespec] = {
+                    "routespec": routespec,
+                    "target": target,
+                    "data": dict() if data is None else json.loads(data),
+                }
+            except:
+                pass
 
         return all_routes
 
@@ -368,9 +371,11 @@ class TKvProxy(TraefikProxy):
             return None
         # data = await self._kv_get_data(target)
         target, _, data = val.partition('\n')
-
-        return {
-            "routespec": routespec,
-            "target": target,
-            "data": None if data is None else json.loads(data),
-        }
+        try:
+            return {
+                "routespec": routespec,
+                "target": target,
+                "data": None if data is None else json.loads(data),
+            }
+        except:
+            return dict(routespec=routespec, target=target)
